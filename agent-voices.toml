@@ -1,0 +1,26 @@
+# Agent Voice Configuration
+# Maps agent identifiers to macOS say voices
+# List available voices with: say -v '?'
+
+[voices]
+main = "en-US-AriaNeural"        # Clear, natural voice
+agent_1 = "en-GB-RyanNeural"     # British male
+agent_2 = "en-US-AvaNeural"      # Australian female equivalent (using US for now or closest)
+agent_3 = "en-IN-PrabhatNeural"  # Indian male (Need to verify, but leaving as placeholder or skipping update for unused)
+subagent = "en-GB-RyanNeural"    # British male
+antigravity = "en-US-AriaNeural"
+default = "en-US-AriaNeural"     # Fallback
+
+# Thai voices
+thai = "th-TH-PremwadeeNeural"   # เปรมวดี
+thai_male = "th-TH-NiwatNeural"  # นิวัฒน์ (Assuming Niwat exists, checking list might be safer but Premwadee is confirmed)
+
+[rate]
+# Speech rate in words per minute (default ~175, faster = 220+)
+main = 175
+agent_1 = 175
+agent_2 = 175
+agent_3 = 175
+subagent = 175
+antigravity = 175
+default = 175

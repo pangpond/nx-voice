@@ -1,0 +1,97 @@
+#!/bin/bash
+# Antigravity Native Voice Interface (edge-tts)
+# Usage: ./antigravity-speak.sh "Message" [Identity/Voice] [Agent]
+#    OR: ./antigravity-speak.sh [Identity] "Message"
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOML_FILE="$SCRIPT_DIR/agent-voices.toml"
+
+# Default fallback values
+# Default fallback values
+VOICE="en-US-AriaNeural"
+AGENT="Antigravity"
+# Rate string for edge-tts (e.g., +0%, +10%)
+RATE="+0%"
+
+# Shorthand support: ./script identity "message"
+if [[ "$#" -eq 2 && ! "$1" =~ " " ]]; then
+    IDENTITY="$1"
+    MESSAGE="$2"
+else
+    MESSAGE="${1:-}"
+    IDENTITY="${2:-$AGENT}"
+fi
+
+if [ -z "$MESSAGE" ]; then
+    echo "Usage: $0 \"Message\" [Identity/Voice] [Agent]"
+    echo "       $0 [Identity] \"Message\""
+    exit 1
+fi
+
+# Identity Lookup from TOML
+if [ -f "$TOML_FILE" ]; then
+    # Look for voice in [voices] section
+    T_VOICE=$(grep -A 50 "\[voices\]" "$TOML_FILE" | grep "^${IDENTITY} =" | head -1 | sed 's/.*= "//;s/".*//' || true)
+    if [ -n "$T_VOICE" ]; then
+        VOICE="$T_VOICE"
+        AGENT="$IDENTITY"
+    else
+        # If identity not found, treat $IDENTITY as voice name if provided
+        if [[ "$#" -eq 2 && ! "$1" =~ " " ]]; then
+             # User passed ./script Identity "Message" and Identity wasn't in TOML.
+             # Assume they might mean a voice name directly?
+             # For safety, if it looks like a voice name, use it.
+             # But let's stick to defaults if unsure.
+             :
+        else
+             # positional
+             VOICE="${2:-$VOICE}"
+             AGENT="${3:-$AGENT}"
+        fi
+    fi
+fi
+
+# Auto-detect Language for "Antigravity" or default contexts
+# If the message contains Thai characters [ก-๙], use the Thai voice.
+if echo "$MESSAGE" | grep -q "[ก-๙]"; then
+    # Thai detected.
+    # Only switch if we are currently using the default English voice (Antigravity/Aria)
+    # or if we are explicitly in "Antigravity" mode.
+    if [[ "$VOICE" == "en-US-AriaNeural" || "$AGENT" == "Antigravity" ]]; then
+        VOICE="th-TH-PremwadeeNeural"
+    fi
+else
+    # No Thai detected (English/Other).
+    # If the agent is Antigravity, ensure we use Aria (English)
+    if [[ "$AGENT" == "Antigravity" ]]; then
+         VOICE="en-US-AriaNeural"
+    fi
+fi
+
+# Generate Audio
+OUTPUT_FILE="/tmp/antigravity_voice_$(date +%s).mp3"
+
+# Check if edge-tts is available
+if ! command -v edge-tts &> /dev/null; then
+    echo "Error: edge-tts not found. Please install it with 'pipx install edge-tts'."
+    exit 1
+fi
+
+# Log
+echo "[Voice] $AGENT ($VOICE): $MESSAGE"
+
+# Execute
+edge-tts --voice "$VOICE" --text "$MESSAGE" --rate="$RATE" --write-media "$OUTPUT_FILE"
+
+# Play
+if command -v afplay &> /dev/null; then
+    afplay "$OUTPUT_FILE"
+    rm "$OUTPUT_FILE"
+elif command -v play &> /dev/null; then
+    play "$OUTPUT_FILE"
+    rm "$OUTPUT_FILE"
+else
+    echo "Audio generated at $OUTPUT_FILE (no player found)"
+fi
