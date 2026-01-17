@@ -156,7 +156,7 @@ main = "en-GB-SoniaNeural"  # British female for Claude
 For Antigravity workflows, use the `antigravity` identity:
 
 ```bash
-speak antigravity "Antigravity system initialized."
+speak antigravity "NX voice protocol active."
 ```
 
 Or call directly from scripts:
@@ -164,6 +164,10 @@ Or call directly from scripts:
 ```bash
 /path/to/nx-voice/speak antigravity "$MESSAGE"
 ```
+
+### Add Agent Workflow
+
+Copy .agent/ to your project root.
 
 ## Troubleshooting
 
