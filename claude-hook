@@ -1,0 +1,59 @@
+#!/bin/bash
+# Claude Code Hook Integration for nx-voice
+# Reads JSON from stdin, extracts assistant message, speaks it
+#
+# Usage: Configure in ~/.claude/settings.json:
+#   "hooks": {
+#     "Stop": [{"hooks": [{"type": "command", "command": "/path/to/nx-voice/claude-hook"}]}]
+#   }
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPEAK_CMD="$SCRIPT_DIR/speak"
+
+# Read hook input from stdin
+INPUT=$(cat)
+
+# Get transcript path from Claude's JSON
+TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // ""')
+
+if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
+    exit 0
+fi
+
+# Extract last assistant message from transcript
+# The transcript is JSONL format with assistant messages containing content array
+LAST_MSG=$(tail -50 "$TRANSCRIPT_PATH" | \
+    jq -r 'select(.type == "assistant") |
+           .message.content[]? |
+           select(.type == "text") |
+           .text' 2>/dev/null | \
+    grep -v "^$" | \
+    tail -1)
+
+if [ -z "$LAST_MSG" ]; then
+    exit 0
+fi
+
+# Clean markdown formatting for natural speech
+# Remove code blocks, inline code, links, and formatting markers
+CLEAN_MSG=$(echo "$LAST_MSG" | \
+    sed 's/```[^`]*```//g' | \
+    sed 's/`[^`]*`//g' | \
+    sed 's/\[.*\]([^)]*)//g' | \
+    sed 's/[*_#]//g' | \
+    sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | \
+    tr -s ' ' | \
+    head -c 300)
+
+# Get first 1-2 sentences for brevity (split on sentence endings)
+SPEAK_TEXT=$(echo "$CLEAN_MSG" | sed 's/\([.!?]\)\s/\1\n/g' | head -2 | tr '\n' ' ')
+
+# Only speak if we have meaningful text (more than 5 characters)
+if [ -n "$SPEAK_TEXT" ] && [ ${#SPEAK_TEXT} -gt 5 ]; then
+    # Use 'main' identity for Claude responses
+    "$SPEAK_CMD" main "$SPEAK_TEXT"
+fi
+
+exit 0

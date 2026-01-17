@@ -1,77 +1,171 @@
 # nx-voice
 
-A lightweight, high-quality CLI text-to-speech tool for macOS using Microsoft Edge's Neural Voices.
+A lightweight CLI text-to-speech tool for macOS using Microsoft Edge's Neural Voices. Works standalone or as a Claude Code hook.
 
-**Features:**
+## Features
 
-- 🗣️ **High Quality**: Uses Microsoft Edge's Neural TTS voices (free).
-- 🇹🇭 **Smart Language Detection**: Automatically switches between Thai (Premwadee) and English (Aria) based on text content.
-- 🚀 **Fast**: Generates and plays audio instantly from your terminal.
-- ⚙️ **Configurable**: Easily add or change voice aliases in `agent-voices.toml`.
+- **High Quality**: Free Microsoft Edge Neural TTS voices (no API key required)
+- **Smart Language Detection**: Auto-switches between Thai and English based on text content
+- **Voice Identities**: Pre-configured personas via `agent-voices.toml`
+- **Claude Code Integration**: Built-in hook to speak Claude's responses aloud
+- **Fast**: Generates and plays audio instantly from terminal
 
 ## Prerequisites
 
-This tool requires `python3` and `pipx` to run.
-
-### 1. Install Dependencies
-
 ```bash
-# Install pipx if you haven't already (for managing python tools)
+# Install pipx (Python tool manager)
 brew install pipx
 pipx ensurepath
 
-# Install edge-tts globally
+# Install edge-tts
 pipx install edge-tts
+
+# Required for Claude Code integration
+brew install jq
 ```
 
 ## Installation
 
-1.  Clone or download this folder.
-2.  Make the script executable (if it isn't already):
-    ```bash
-    chmod +x speak
-    ```
-3.  (Optional) Add it to your PATH or alias it in your `.zshrc` or `.bashrc`:
-    ```bash
-    alias speak="/path/to/nx-voice/speak"
-    ```
+```bash
+# Clone the repository
+git clone https://github.com/pangpond/nx-voice.git
+cd nx-voice
+
+# Make scripts executable
+chmod +x speak claude-hook
+
+# (Optional) Add to PATH for global access
+echo 'export PATH="$PATH:'$(pwd)'"' >> ~/.zshrc
+source ~/.zshrc
+```
 
 ## Usage
 
-### Basic Usage
-
-The script automatically detects if you are speaking Thai or English.
+### CLI Usage
 
 ```bash
-# Speaks in English (AriaNeural)
-./speak "Hello, how are you today?"
+# Auto-detect language
+speak "Hello, how are you?"           # English (AriaNeural)
+speak "สวัสดีครับ วันนี้เป็นอย่างไรบ้าง"     # Thai (PremwadeeNeural)
 
-# Speaks in Thai (PremwadeeNeural)
-./speak "สวัสดีครับ วันนี้ทานข้าวหรือยัง"
+# Use specific voice identity
+speak main "System ready."
+speak agent_1 "This is a confidential briefing."
+speak subagent "Task completed successfully."
 ```
 
-### Using Specific Identities
+### Available Voice Identities
 
-You can specify a persona defined in `agent-voices.toml`.
+| Identity | Voice | Description |
+|----------|-------|-------------|
+| `main` | en-US-AriaNeural | Default clear voice |
+| `agent_1` | en-GB-RyanNeural | British male |
+| `agent_2` | en-US-AvaNeural | US female |
+| `subagent` | en-GB-RyanNeural | British male |
+| `antigravity` | en-US-AriaNeural | Antigravity system voice |
+| `thai` | th-TH-PremwadeeNeural | Thai female |
+| `thai_male` | th-TH-NiwatNeural | Thai male |
 
-```bash
-# Use a specific identity (e.g. 'agent_1' mapped to a British male voice)
-./speak agent_1 "This is a confidential briefing."
-```
+### Custom Voices
 
-### Configuration
-
-Edit `agent-voices.toml` to change default voices or add new personas.
+Edit `agent-voices.toml` to add or modify voice mappings:
 
 ```toml
 [voices]
-main = "en-US-AriaNeural"
-agent_1 = "en-GB-RyanNeural"
-thai = "th-TH-PremwadeeNeural"
+my_voice = "en-AU-NatashaNeural"
+
+[rate]
+my_voice = 200  # Words per minute
 ```
 
-You can find a list of all available voices by running:
+List all available voices:
 
 ```bash
 edge-tts --list-voices
 ```
+
+## Claude Code Integration
+
+The `claude-hook` script speaks Claude's responses aloud when Claude finishes a task.
+
+### Setup
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/nx-voice/claude-hook"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/nx-voice/claude-hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Replace `/path/to/nx-voice` with your actual installation path.
+
+### How It Works
+
+1. Claude finishes responding (Stop/SubagentStop event)
+2. Hook reads the transcript path from Claude's JSON input
+3. Extracts the last assistant message
+4. Cleans markdown formatting (code blocks, links, etc.)
+5. Speaks the first 1-2 sentences using the `main` voice
+
+### Change Claude's Voice
+
+Edit the voice identity in `agent-voices.toml`:
+
+```toml
+[voices]
+main = "en-GB-SoniaNeural"  # British female for Claude
+```
+
+## Antigravity Integration
+
+For Antigravity workflows, use the `antigravity` identity:
+
+```bash
+speak antigravity "Antigravity system initialized."
+```
+
+Or call directly from scripts:
+
+```bash
+/path/to/nx-voice/speak antigravity "$MESSAGE"
+```
+
+## Troubleshooting
+
+**edge-tts not found**
+```bash
+pipx install edge-tts
+pipx ensurepath
+source ~/.zshrc
+```
+
+**jq not found (Claude hook)**
+```bash
+brew install jq
+```
+
+**No audio playback**
+- macOS uses `afplay` (built-in)
+- Linux needs `play` from sox: `sudo apt install sox`
