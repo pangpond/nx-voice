@@ -1,0 +1,19 @@
+#!/bin/bash
+# Claude Code Session Start Hook for nx-voice
+# Announces when a new Claude Code session begins
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPEAK_CMD="$SCRIPT_DIR/speak"
+
+# Read hook input from stdin (contains session info)
+INPUT=$(cat)
+
+# Extract session type if available
+SESSION_TYPE=$(echo "$INPUT" | jq -r '.session_type // "interactive"' 2>/dev/null || echo "interactive")
+
+# Announce session start
+"$SPEAK_CMD" main "NX voice protocol active."
+
+exit 0

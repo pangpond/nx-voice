@@ -32,7 +32,7 @@ git clone https://github.com/pangpond/nx-voice.git
 cd nx-voice
 
 # Make scripts executable
-chmod +x speak claude-hook
+chmod +x speak claude-hook claude-session-start
 
 # (Optional) Add to PATH for global access
 echo 'export PATH="$PATH:'$(pwd)'"' >> ~/.zshrc
@@ -56,15 +56,15 @@ speak subagent "Task completed successfully."
 
 ### Available Voice Identities
 
-| Identity | Voice | Description |
-|----------|-------|-------------|
-| `main` | en-US-AriaNeural | Default clear voice |
-| `agent_1` | en-GB-RyanNeural | British male |
-| `agent_2` | en-US-AvaNeural | US female |
-| `subagent` | en-GB-RyanNeural | British male |
-| `antigravity` | en-US-AriaNeural | Antigravity system voice |
-| `thai` | th-TH-PremwadeeNeural | Thai female |
-| `thai_male` | th-TH-NiwatNeural | Thai male |
+| Identity      | Voice                 | Description              |
+| ------------- | --------------------- | ------------------------ |
+| `main`        | en-US-AriaNeural      | Default clear voice      |
+| `agent_1`     | en-GB-RyanNeural      | British male             |
+| `agent_2`     | en-US-AvaNeural       | US female                |
+| `subagent`    | en-GB-RyanNeural      | British male             |
+| `antigravity` | en-US-AriaNeural      | Antigravity system voice |
+| `thai`        | th-TH-PremwadeeNeural | Thai female              |
+| `thai_male`   | th-TH-NiwatNeural     | Thai male                |
 
 ### Custom Voices
 
@@ -86,7 +86,10 @@ edge-tts --list-voices
 
 ## Claude Code Integration
 
-The `claude-hook` script speaks Claude's responses aloud when Claude finishes a task.
+nx-voice includes hooks for Claude Code:
+
+- `claude-session-start` - Announces "NX voice protocol active" when session begins
+- `claude-hook` - Speaks Claude's responses when tasks complete
 
 ### Setup
 
@@ -95,6 +98,16 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/nx-voice/claude-session-start"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
@@ -155,6 +168,7 @@ Or call directly from scripts:
 ## Troubleshooting
 
 **edge-tts not found**
+
 ```bash
 pipx install edge-tts
 pipx ensurepath
@@ -162,10 +176,12 @@ source ~/.zshrc
 ```
 
 **jq not found (Claude hook)**
+
 ```bash
 brew install jq
 ```
 
 **No audio playback**
+
 - macOS uses `afplay` (built-in)
 - Linux needs `play` from sox: `sudo apt install sox`
