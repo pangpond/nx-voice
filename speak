@@ -1,5 +1,5 @@
 #!/bin/bash
-# Antigravity Native Voice Interface (edge-tts)
+# NX Native Voice Interface (edge-tts)
 # Usage: ./antigravity-speak.sh "Message" [Identity/Voice] [Agent]
 #    OR: ./antigravity-speak.sh [Identity] "Message"
 

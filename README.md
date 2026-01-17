@@ -189,3 +189,7 @@ brew install jq
 
 - macOS uses `afplay` (built-in)
 - Linux needs `play` from sox: `sudo apt install sox`
+
+**Antigravity Voice Protocol not initialized**
+
+- prompt: read .cursorrules file
