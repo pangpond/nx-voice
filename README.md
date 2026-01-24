@@ -117,20 +117,12 @@ Add to `~/.claude/settings.json`:
           }
         ]
       }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/path/to/nx-voice/claude-hook"
-          }
-        ]
-      }
     ]
   }
 }
 ```
+
+> **Note:** Only use `Stop` hook. Adding `SubagentStop` causes double voice playback.
 
 Replace `/path/to/nx-voice` with your actual installation path.
 
@@ -190,6 +182,14 @@ brew install jq
 - macOS uses `afplay` (built-in)
 - Linux needs `play` from sox: `sudo apt install sox`
 
-**Antigravity Voice Protocol not initialized**
+**NX Voice Protocol not initialized**
 
 - prompt: read .cursorrules file
+
+**command not found: speak**
+
+- add absolute path to speak command in .cursorrules
+
+```
+**Command**: `/path/to/nx-voice/speak "Your concise report here"`
+```
